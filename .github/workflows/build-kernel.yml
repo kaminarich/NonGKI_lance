@@ -247,6 +247,13 @@ jobs:
     - name: Setup Configuration for kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        
+        # --- FORCED KERNEL NAME CHANGE (WITH EMOJI) ---
+        # Hapus settingan lama dan paksa pakai nama baru dengan Emoji
+        sed -i '/CONFIG_LOCALVERSION/d' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
+        echo 'CONFIG_LOCALVERSION="-💠Aetherium1.0-Primordial-SukiSUSU"' >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
+        # -----------------------------------------------
+
         if [ ${{ env.ENABLE_KERNELSU }} = true ]; then
             if [ ${{ env.KSU_HOOKS_PATCH }} = true ]; then
                 git apply $GITHUB_WORKSPACE/patches/KSU_HOOKS_PATCH.patch
