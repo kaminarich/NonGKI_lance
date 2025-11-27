@@ -333,15 +333,6 @@ jobs:
             cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         fi
 
-    - name: Force Kernel Name (Final Patch)
-      run: |
-        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        echo "Forcing kernel name to 💠Aetherium1.0-Primordial-SukiSUSU..."
-        # Hapus CONFIG_LOCALVERSION lama agar tidak duplikat
-        sed -i '/CONFIG_LOCALVERSION/d' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
-        # Tambahkan nama baru yang diinginkan
-        echo 'CONFIG_LOCALVERSION="-💠Aetherium1.0-Primordial-SukiSUSU"' >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
-
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
       uses: hendrikmuhs/ccache-action@v1.2
