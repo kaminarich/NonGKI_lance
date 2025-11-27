@@ -155,7 +155,7 @@ jobs:
       if: env.USE_GCC == 'true' && env.USE_CLANG != 'true'
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace
-        if [ ${{ env.USE_GCC_64 }} = true ]; then
+        if [ "${{ env.USE_GCC_64 }}" = "true" ]; then
             if [[ ${{ env.GCC_64_SOURCE }} == *'.tar.gz' ]]; then
                 wget -nv -O gcc-64.tar.gz ${{ env.GCC_64_SOURCE }}
                 mkdir gcc-64
@@ -183,7 +183,7 @@ jobs:
                 mv -f "$(find ./gcc-64 -mindepth 1 -maxdepth 1 -type d)"/* ./gcc-64
             fi
         fi
-        if [ ${{ env.USE_GCC_32 }} = true ]; then
+        if [ "${{ env.USE_GCC_32 }}" = "true" ]; then
             if [[ ${{ env.GCC_32_SOURCE }} == *'.tar.gz' ]]; then
                 wget -nv -O gcc-32.tar.gz ${{ env.GCC_32_SOURCE }}
                 mkdir gcc-32
@@ -238,17 +238,22 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         curl -LSs "$KERNELSU_SETUP_SOURCE" | bash -s ${{ env.KERNELSU_TAG }}
-        KSU_VERSION="_$(cd $(echo "$KERNELSU_SETUP_SOURCE" | cut -d/ -f5) || cd KernelSU && expr $(git rev-list --count HEAD) + 10200)"
+        # FIX: Masuk folder manual karena nama folder tidak selalu sama dengan repo
+        cd KernelSU
+        KSU_VERSION="_$(expr $(git rev-list --count HEAD) + 10200)"
         echo "UPLOADNAME=-KernelSU-${{ matrix.target }}$KSU_VERSION" >> $GITHUB_ENV
-        if [ ${{ env.KSU_REVERT }} = true ]; then
+        cd ..
+        # FIX: Tambahkan quote untuk menghindari error unary operator
+        if [ "${{ env.KSU_REVERT }}" = "true" ]; then
             git apply $GITHUB_WORKSPACE/patches/KSU_REVERT.patch
         fi
 
     - name: Setup Configuration for kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        if [ ${{ env.ENABLE_KERNELSU }} = true ]; then
-            if [ ${{ env.KSU_HOOKS_PATCH }} = true ]; then
+        # FIX: Tambahkan quote di semua IF statement
+        if [ "${{ env.ENABLE_KERNELSU }}" = "true" ]; then
+            if [ "${{ env.KSU_HOOKS_PATCH }}" = "true" ]; then
                 git apply $GITHUB_WORKSPACE/patches/KSU_HOOKS_PATCH.patch
                 if grep -q "CONFIG_KSU" arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig; then
                     sed -i 's/# CONFIG_KSU is not set/CONFIG_KSU=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
@@ -257,7 +262,7 @@ jobs:
                     echo "CONFIG_KSU=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 fi
             fi
-            if [ ${{ env.ADD_KPROBES_CONFIG }} = true -a ${{ env.KSU_HOOKS_PATCH }} != true ]; then
+            if [ "${{ env.ADD_KPROBES_CONFIG }}" = "true" ] && [ "${{ env.KSU_HOOKS_PATCH }}" != "true" ]; then
                 echo "CONFIG_MODULES=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 echo "CONFIG_KPROBES=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 echo "CONFIG_HAVE_KPROBES=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
@@ -283,12 +288,12 @@ jobs:
         echo "$config" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
         done
         fi
-        if [ ${{ env.ADD_OVERLAYFS_CONFIG }} = true ]; then
+        if [ "${{ env.ADD_OVERLAYFS_CONFIG }}" = "true" ]; then
             echo "CONFIG_OVERLAY_FS=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             echo "CONFIG_OVERLAY_FS_REDIRECT_DIR=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             echo "CONFIG_OVERLAY_FS_INDEX=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
         fi
-        if [ ${{ env.ADD_APATCH_SUPPORT }} = true ]; then
+        if [ "${{ env.ADD_APATCH_SUPPORT }}" = "true" ]; then
                 sed -i 's/# CONFIG_DEBUG_KERNEL is not set/CONFIG_DEBUG_KERNEL=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 sed -i 's/CONFIG_DEBUG_KERNEL=n/CONFIG_DEBUG_KERNEL=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 echo "CONFIG_DEBUG_KERNEL=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
@@ -301,23 +306,23 @@ jobs:
                 sed -i 's/# CONFIG_KALLSYMS_BASE_RELATIVE is not set/CONFIG_KALLSYMS_BASE_RELATIVE=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 sed -i 's/CONFIG_KALLSYMS_BASE_RELATIVE=n/CONFIG_KALLSYMS_BASE_RELATIVE=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
                 echo "CONFIG_KALLSYMS_BASE_RELATIVE=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
-                if [ ${{ env.FIX_APATCH_OPENELA }} = true ]; then
+                if [ "${{ env.FIX_APATCH_OPENELA }}" = "true" ]; then
                     git apply $GITHUB_WORKSPACE/patches/FIX_APATCH_OPENELA.patch || {
                     git apply $GITHUB_WORKSPACE/patches/REVERT_ADD_GET_CRED_RCU.patch
                     git apply $GITHUB_WORKSPACE/patches/FIX_APATCH_OPENELA.patch
                     }
                 fi
         fi
-        if [ ${{ env.DISABLE_LTO }} = true ]; then
+        if [ "${{ env.DISABLE_LTO }}" = "true" ]; then
             sed -i 's/CONFIG_LTO=y/CONFIG_LTO=n/' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             sed -i 's/CONFIG_LTO_CLANG=y/CONFIG_LTO_CLANG=n/' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             sed -i 's/CONFIG_THINLTO=y/CONFIG_THINLTO=n/' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             echo "CONFIG_LTO_NONE=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
         fi
-        if [ ${{ env.DISABLE_CC_WERROR }} = true ]; then
+        if [ "${{ env.DISABLE_CC_WERROR }}" = "true" ]; then
             echo "CONFIG_CC_WERROR=n" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
         fi
-        if [ ${{ env.OLD_ANDROID_SUPPORT }} = true ]; then
+        if [ "${{ env.OLD_ANDROID_SUPPORT }}" = "true" ]; then
             git apply $GITHUB_WORKSPACE/patches/OLD_ANDROID_SUPPORT.patch
             if grep -q "CONFIG_MMC_CRYPTO_LEGACY" arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig; then
                 sed -i 's/# CONFIG_MMC_CRYPTO_LEGACY is not set/CONFIG_MMC_CRYPTO_LEGACY=y/g' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
@@ -326,7 +331,7 @@ jobs:
                 echo "CONFIG_MMC_CRYPTO_LEGACY=y" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
             fi
         fi
-        if [ ${{ env.FIX_WIFI_SPEED }} = true ]; then
+        if [ "${{ env.FIX_WIFI_SPEED }}" = "true" ]; then
             rm -rf drivers/misc/mediatek/connectivity
             cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel/drivers/misc/mediatek
             git clone https://github.com/Jbub5/connectivity.git --depth=1
@@ -343,14 +348,14 @@ jobs:
     - name: Build kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        if [ ${{ env.USE_GCC }} = true ]; then
-            if [ ${{ env.USE_GCC_64 }} = true ]; then
+        if [ "${{ env.USE_GCC }}" = "true" ]; then
+            if [ "${{ env.USE_GCC_64 }}" = "true" ]; then
                 export PATH=$GITHUB_WORKSPACE/kernel_workspace/gcc-64/bin:$PATH
             fi
-            if [ ${{ env.USE_GCC_32 }} = true ]; then
+            if [ "${{ env.USE_GCC_32 }}" = "true" ]; then
                 export PATH=$GITHUB_WORKSPACE/kernel_workspace/gcc-32/bin:$PATH
             fi
-        elif [ ${{ env.USE_CLANG }} = true ]; then
+        elif [ "${{ env.USE_CLANG }}" = "true" ]; then
             export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang/bin:$PATH
         else
             echo "Toolchain not selected"
@@ -358,19 +363,19 @@ jobs:
         fi
         export KBUILD_BUILD_HOST=Github-Action
         export KBUILD_BUILD_USER=$(echo ${{ github.actor }} | tr A-Z a-z)
-        if [ -n ${{ env.KSU_EXPECTED_SIZE }} ] && [ -n ${{ env.KSU_EXPECTED_HASH }} ]; then
+        if [ -n "${{ env.KSU_EXPECTED_SIZE }}" ] && [ -n "${{ env.KSU_EXPECTED_HASH }}" ]; then
           export KSU_EXPECTED_SIZE=${{ env.KSU_EXPECTED_SIZE }}
           export KSU_EXPECTED_HASH=${{ env.KSU_EXPECTED_HASH }}
         fi
         make -j$(nproc --all) CC=clang O=out ARCH=${{ env.KERNEL_ARCH }} ${{ env.EXTRA_CMDS }} ${DEVICE}_defconfig
-        if [ ${{ env.ENABLE_CCACHE }} = true ]; then
-            if [ ${{ env.USE_GCC }} = true ]; then
+        if [ "${{ env.ENABLE_CCACHE }}" = "true" ]; then
+            if [ "${{ env.USE_GCC }}" = "true" ]; then
                 make -j$(nproc --all) CC="ccache gcc" O=out ARCH=${{ env.KERNEL_ARCH }} ${{ env.EXTRA_CMDS }}
             else
                 make -j$(nproc --all) CC="ccache clang" O=out ARCH=${{ env.KERNEL_ARCH }} ${{ env.EXTRA_CMDS }}
             fi
         else
-            if [ ${{ env.USE_GCC }} = true ]; then
+            if [ "${{ env.USE_GCC }}" = "true" ]; then
                 make -j$(nproc --all) CC=gcc O=out ARCH=${{ env.KERNEL_ARCH }} ${{ env.EXTRA_CMDS }}
             else
                 make -j$(nproc --all) CC=clang O=out ARCH=${{ env.KERNEL_ARCH }} ${{ env.EXTRA_CMDS }}
@@ -386,7 +391,7 @@ jobs:
            echo "Kernel output file is empty"
            exit 1
        fi
-       if [ ${{ env.NEED_DTBO }} = true ]; then
+       if [ "${{ env.NEED_DTBO }}" = "true" ]; then
            if [ -f android-kernel/out/arch/${{ env.KERNEL_ARCH }}/boot/dtbo.img ]; then
                echo "CHECK_DTBO_IS_OK=true" >> $GITHUB_ENV
            else
@@ -439,7 +444,7 @@ jobs:
             rm AnyKernel3.zip
         fi
         cp android-kernel/out/arch/${{ env.KERNEL_ARCH }}/boot/${{ env.KERNEL_IMAGE_NAME }} AnyKernel3/
-        if [ ${{ env.CHECK_DTBO_IS_OK }} = true ]; then
+        if [ "${{ env.CHECK_DTBO_IS_OK }}" = "true" ]; then
             cp android-kernel/out/arch/${{ env.KERNEL_ARCH }}/boot/dtbo.img AnyKernel3/
         fi
         rm -rf AnyKernel3/.git* AnyKernel3/README.md
