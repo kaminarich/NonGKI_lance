@@ -247,13 +247,6 @@ jobs:
     - name: Setup Configuration for kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
-        
-        # --- FORCED KERNEL NAME CHANGE (WITH EMOJI) ---
-        # Hapus settingan lama dan paksa pakai nama baru dengan Emoji
-        sed -i '/CONFIG_LOCALVERSION/d' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
-        echo 'CONFIG_LOCALVERSION="-💠Aetherium1.0-Primordial-SukiSUSU"' >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
-        # -----------------------------------------------
-
         if [ ${{ env.ENABLE_KERNELSU }} = true ]; then
             if [ ${{ env.KSU_HOOKS_PATCH }} = true ]; then
                 git apply $GITHUB_WORKSPACE/patches/KSU_HOOKS_PATCH.patch
@@ -339,6 +332,15 @@ jobs:
             git clone https://github.com/Jbub5/connectivity.git --depth=1
             cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         fi
+
+    - name: Force Kernel Name (Final Patch)
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        echo "Forcing kernel name to 💠Aetherium1.0-Primordial-SukiSUSU..."
+        # Hapus CONFIG_LOCALVERSION lama agar tidak duplikat
+        sed -i '/CONFIG_LOCALVERSION/d' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
+        # Tambahkan nama baru yang diinginkan
+        echo 'CONFIG_LOCALVERSION="-💠Aetherium1.0-Primordial-SukiSUSU"' >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
 
     - name: Setup ccache
       if: env.ENABLE_CCACHE == 'true'
