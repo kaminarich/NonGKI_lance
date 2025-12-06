@@ -1,4 +1,4 @@
-Name: 2nd Build Kernel
+name: Build Kernel
 on:
   workflow_dispatch:
     inputs:
@@ -29,7 +29,6 @@ on:
         required: true
         default: true
         type: boolean
-      # --- Opsi Baru KowSU ---
       build_kowsu:
         description: 'Build KowSU A13+ (config-ksu.env)'
         required: true
@@ -57,7 +56,6 @@ jobs:
           if [[ "${{ github.event.inputs.build_suki }}" == "true" ]]; then targets+=("suki"); fi
           if [[ "${{ github.event.inputs.build_suki_old }}" == "true" ]]; then targets+=("suki-old"); fi
           
-          # Logika untuk KowSU
           if [[ "${{ github.event.inputs.build_kowsu }}" == "true" ]]; then targets+=("kowsu"); fi
           if [[ "${{ github.event.inputs.build_kowsu_old }}" == "true" ]]; then targets+=("kowsu-old"); fi
           
