@@ -9,6 +9,12 @@ on:
         options:
         - 'lancelot'
         - 'merlin'
+      # --- Opsi Nama Kernel Internal ---
+      kernel_name:
+        description: 'Kernel Name (Internal Name & Zip Name)'
+        required: false
+        type: string
+      # ---------------------------------
       build_ksun:
         description: 'Build KernelSU-Next A13+'
         required: true
@@ -268,6 +274,18 @@ jobs:
     - name: Setup Configuration for kernel
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        
+        # --- LOGIKA GANTI NAMA KERNEL ---
+        KERNEL_NAME_INPUT="${{ github.event.inputs.kernel_name }}"
+        if [ ! -z "$KERNEL_NAME_INPUT" ]; then
+            echo "Replacing kernel name with: $KERNEL_NAME_INPUT"
+            # Hapus CONFIG_LOCALVERSION lama
+            sed -i '/CONFIG_LOCALVERSION=/d' arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
+            # Tambah yang baru dengan awalan dash (-)
+            echo "CONFIG_LOCALVERSION=\"-$KERNEL_NAME_INPUT\"" >> arch/${{ env.KERNEL_ARCH }}/configs/${DEVICE}_defconfig
+        fi
+        # --------------------------------
+
         if [ ${{ env.ENABLE_KERNELSU }} = true ]; then
             if [ ${{ env.KSU_HOOKS_PATCH }} = true ]; then
                 git apply $GITHUB_WORKSPACE/patches/KSU_HOOKS_PATCH.patch
